@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Receipt Contract</title>
+    <script src="https://cdn.jsdelivr.net/gh/ethereum/web3.js@1.5.2/dist/web3.min.js"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Receipt Contract</h1>
+        <div class="form-group">
+            <label for="amount">Amount (in Wei):</label>
+            <input type="number" id="amount">
+        </div>
+        <button onclick="generateReceipt()">Generate Receipt</button>
+        <h2>Receipts</h2>
+        <button onclick="getReceipts()">Get Receipts</button>
+        <ul id="receiptsList"></ul>
+    </div>
+
+    <script>
+        const contractAddress = '0x22eBb3e8faf00C59D9D3818B335bbF4bA8ab4821';
+        const contractABI = [
+            {
+                "anonymous": false,
+                "inputs": [
+                    {
+                        "indexed": true,
+                        "internalType": "address",
+                        "name": "sender",
+                        "type": "address"
+                    },
+                    {
+                        "indexed": false,
+                        "internalType": "uint256",
+                        "name": "amount",
+                        "type": "uint256"
+                    },
+                    {
+                        "indexed": false,
+                        "internalType": "uint256",
+                        "name": "timestamp",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "ReceiptGenerated",
+                "type": "event"
+            },
+            {
+                "inputs": [],
+                "name": "generateReceipt",
+                "outputs": [],
+                "stateMutability": "payable",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "index",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "getReceipt",
+                "outputs": [
+                    {
+                        "internalType": "address",
+                        "name": "",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "getReceiptCount",
+                "outputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "receipts",
+                "outputs": [
+                    {
+                        "internalType": "address",
+                        "name": "sender",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "amount",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "timestamp",
+                        "type": "uint256"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            }
+        ];
+
+        const web3 = new Web3(Web3.givenProvider || "http://localhost:8545");
+        const contract = new web3.eth.Contract(contractABI, contractAddress);
+
+        async function generateReceipt() {
+            const accounts = await web3.eth.getAccounts();
+            const amount = document.getElementById("amount").value;
+
+            contract.methods.generateReceipt().send({ from: accounts[0], value: amount })
+                .on('receipt', function(receipt) {
+                    alert('Receipt Generated');
+                })
+                .on('error', function(error) {
+                    console.error(error);
+                });
+        }
+
+        async function getReceipts() {
+            const totalReceipts = await contract.methods.getReceiptCount().call();
+            const receiptsList = document.getElementById("receiptsList");
+            receiptsList.innerHTML = '';
+
+            for (let i = 0; i < totalReceipts; i++) {
+                const receipt = await contract.methods.getReceipt(i).call();
+                const listItem = document.createElement("li");
+
+                listItem.textContent = `Sender: ${receipt[0]}, Amount: ${receipt[1]}, Timestamp: ${new Date(receipt[2] * 1000).toLocaleString()}`;
+                receiptsList.appendChild(listItem);
+            }
+        }
+    </script>
+</body>
+</html>
